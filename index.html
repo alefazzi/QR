@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generatore di Codici QR</title>
+    
+    <!-- Inclusione di Tailwind CSS per uno stile moderno e responsivo -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Inclusione della libreria qrcode.js per generare i codici QR -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* Stile per il font di base e un'animazione fluida */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        #qrcode img {
+            margin: auto;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+
+    <!-- Card principale dell'applicazione -->
+    <div class="bg-white p-6 sm:p-8 rounded-2xl shadow-lg max-w-md w-full transform transition-all hover:shadow-2xl">
+        
+        <!-- Intestazione -->
+        <div class="text-center mb-6">
+            <h1 class="text-2xl sm:text-3xl font-bold text-gray-800">Generatore di Codici QR</h1>
+            <p class="text-gray-500 mt-2">Inserisci un URL per creare il tuo codice QR personalizzato.</p>
+        </div>
+
+        <!-- Form per l'input dell'utente -->
+        <div class="space-y-4">
+            <div>
+                <label for="urlInput" class="block text-sm font-medium text-gray-700 mb-1">URL di destinazione</label>
+                <input type="url" id="urlInput" placeholder="https://www.esempio.it" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+            </div>
+            
+            <!-- Messaggio di errore -->
+            <div id="errorMessage" class="text-red-500 text-sm text-center"></div>
+
+            <!-- Pulsante per generare il codice -->
+            <button id="generateBtn" class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-transform transform hover:scale-105">
+                Genera Codice
+            </button>
+        </div>
+
+        <!-- Area dove verrà visualizzato il codice QR -->
+        <div id="qr-container" class="mt-6 flex flex-col items-center justify-center space-y-4">
+            <div id="qrcode" class="p-4 bg-white border border-gray-200 rounded-lg inline-block min-h-[200px] min-w-[200px] flex items-center justify-center">
+                 <span class="text-gray-400">Il tuo QR apparirà qui</span>
+            </div>
+            
+            <!-- Pulsante per scaricare il codice QR (inizialmente nascosto) -->
+            <button id="downloadBtn" class="hidden w-full bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-transform transform hover:scale-105">
+                Scarica QR (.png)
+            </button>
+        </div>
+
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Seleziona gli elementi del DOM
+            const urlInput = document.getElementById('urlInput');
+            const generateBtn = document.getElementById('generateBtn');
+            const qrcodeContainer = document.getElementById('qrcode');
+            const downloadBtn = document.getElementById('downloadBtn');
+            const errorMessage = document.getElementById('errorMessage');
+            
+            let qrCodeInstance = null; // Per tenere traccia dell'istanza del QR code
+
+            // Funzione per generare il codice QR
+            const generateQRCode = () => {
+                const url = urlInput.value.trim();
+
+                // Validazione dell'input
+                if (!url) {
+                    errorMessage.textContent = 'Per favore, inserisci un URL valido.';
+                    qrcodeContainer.innerHTML = '<span class="text-gray-400">Il tuo QR apparirà qui</span>';
+                    downloadBtn.classList.add('hidden');
+                    return;
+                }
+                
+                // Pulisce i messaggi di errore e il contenitore del QR precedente
+                errorMessage.textContent = '';
+                qrcodeContainer.innerHTML = '';
+                qrcodeContainer.classList.remove('fade-in');
+
+
+                // Crea una nuova istanza di QRCode
+                qrCodeInstance = new QRCode(qrcodeContainer, {
+                    text: url,
+                    width: 200,
+                    height: 200,
+                    colorDark: "#000000",
+                    colorLight: "#ffffff",
+                    correctLevel: QRCode.CorrectLevel.H // Livello di correzione errori alto
+                });
+
+                // Aggiunge un'animazione e mostra il pulsante di download
+                setTimeout(() => {
+                    qrcodeContainer.classList.add('fade-in');
+                    downloadBtn.classList.remove('hidden');
+                    downloadBtn.classList.add('fade-in');
+                }, 100); // Piccolo ritardo per garantire il rendering
+            };
+
+            // Funzione per scaricare il codice QR
+            const downloadQRCode = () => {
+                // Trova l'immagine generata dalla libreria
+                const img = qrcodeContainer.querySelector('img');
+                if (img) {
+                    const link = document.createElement('a');
+                    link.href = img.src;
+                    link.download = 'codice-qr.png';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                }
+            };
+
+            // Aggiunge gli event listener ai pulsanti
+            generateBtn.addEventListener('click', generateQRCode);
+            downloadBtn.addEventListener('click', downloadQRCode);
+
+            // Permette di generare il codice anche premendo "Invio" nel campo di input
+            urlInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    generateQRCode();
+                }
+            });
+        });
+    </script>
+
+</body>
+</html>
